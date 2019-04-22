@@ -8,7 +8,7 @@ CFLAGS          = -Wall -Wextra -Werror
 
 # Target variables
 LIB_MALLOC_LINK = libft_malloc.so
-LIB_MALLOC 		= libft_malloc_$(HOSTTYPE)
+LIB_MALLOC 		= libft_malloc_$(HOSTTYPE).so
 
 # Libft variables
 LIBFT_PATH      = lib/libft

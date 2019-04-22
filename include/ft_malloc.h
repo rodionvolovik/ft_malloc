@@ -2,6 +2,7 @@
 # define FT_MALLOC_FT_MALLOC_H_
 
 # include <stdlib.h>
+# include <pthread.h>
 
 /**
  * Allowed functions
@@ -14,28 +15,32 @@
  */
 
 # define N_BLOCKS 		100
-# define N_ZONES		3
+# define I_SMALL_ZONE	0
+# define I_LARGE_ZONE	1
+# define N_ZONES		2
+# define MEM_ALIGNMENT	16
 
 typedef enum 			e_mem_block_size
 {
-						TINY = 512,
-						SMALL = 1024
+						TINY = 256,
+						SMALL = 1024,
+						LARGE
 }						t_mem_block_size;
 
 typedef struct 			s_memblock
 {
-	size_t				size;
-	struct s_memblock	*next;
+	size_t				total_free;
+	struct s_memblock	*next_memblock;
 }						t_memblock;
 
 typedef struct			s_memzone
 {
-	t_mem_block_size	type;
-	t_memblock			*ptr;
-	t_memblock			*start;
+	t_memblock			*memory_allocated;
+	t_memblock			*memory_empty;
 }						t_memzone;
 
 t_memzone				g_zones_array[N_ZONES];
+pthread_mutex_t			g_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /**
  * -) deallocates the memory allocation pointed to by “ptr”.

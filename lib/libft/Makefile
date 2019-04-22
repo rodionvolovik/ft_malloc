@@ -73,7 +73,7 @@ ft_toupper.c \
 all_delims_split.c \
 stack.c
 
-INC = includes/libft.h
+INC = includes/
 
 OBJ = $(SRC:.c=.o)
 
