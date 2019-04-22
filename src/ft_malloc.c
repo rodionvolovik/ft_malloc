@@ -22,7 +22,7 @@ static size_t		align_memory_size(size_t size)
 
 static size_t		*cut_new_block(t_memblock *p_memblock, size_t size)
 {
-	
+
 }
 
 static t_memblock	*find_allocated_page_space(size_t size_type, size_t size)
@@ -50,6 +50,8 @@ static t_memblock	*get_free_mem_block(size_t size_type, size_t size)
 	{
 		p_memblock = allocate_new_page_memory(size_type, size);
 	}
+
+	return p_memblock;
 }
 
 void				*ft_malloc(size_t size)
