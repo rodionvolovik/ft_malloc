@@ -4,7 +4,7 @@ endif
 
 # Compile variables
 CC              = gcc
-CFLAGS          = -Wall -Wextra -Werror
+CFLAGS          = -Wall -Wextra -Werror -Wno-unused
 
 # Target variables
 LIB_MALLOC_LINK = libft_malloc.so
@@ -37,7 +37,7 @@ $(LIB_MALLOC_LINK): $(LIB_MALLOC)
 
 $(LIB_MALLOC): $(OBJECT)
 	@echo  "\x1b[01;32m[Libft_malloc compiled]\x1b[0m"
-	@$(CC) -shared $^ -o $@ $(LIBFT)
+	@$(CC) -shared $^ -o $@ $(LIBFT) -lpthread
 
 $(OBJECT): | $(OBJECT_PATH)
 
@@ -45,7 +45,7 @@ $(OBJECT_PATH):
 	@mkdir -p $(OBJECT_PATH)
 
 $(OBJECT_PATH)/%.o: $(SRC_PATH)/%.c $(INC)
-	@$(CC) -fPIC $(CFLAGS) -c $< -o $@ $(INCLUDE_FLAGS) $(LIBFT_INCLUDE)
+	@$(CC) -fPIC $(CFLAGS) -c $< -o $@ $(INCLUDE_FLAGS) $(LIBFT_INCLUDE) $(LIBFT_FLAGS) -lpthread
 
 $(LIBFT) :
 	@make -C $(LIBFT_PATH)

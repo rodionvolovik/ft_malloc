@@ -7,40 +7,38 @@
 /**
  * Allowed functions
  *
- * mmap(2) - claim and return the memory zones to the system
- * munmap(2) - claim and return the memory zones to the system
+ * mmap(2) - claim and return the memory pages to the system
+ * munmap(2) - claim and return the memory pages to the system
  * getpagesize(3)
  * getrlimit(2)
  * lpthread
  */
 
 # define N_BLOCKS 		100
-# define I_SMALL_ZONE	0
-# define I_LARGE_ZONE	1
-# define N_ZONES		2
-# define MEM_ALIGNMENT	16
-
-typedef enum 			e_mem_block_size
-{
-						TINY = 256,
-						SMALL = 1024,
-						LARGE
-}						t_mem_block_size;
+# define I_TINY_PAGE	0
+# define I_SMALL_PAGE	1
+# define I_LARGE_PAGE	2
+# define TINY			256
+# define SMALL			4096
+# define N_PAGES		2
 
 typedef struct 			s_memblock
 {
-	size_t				total_free;
-	struct s_memblock	*next_memblock;
+	struct s_memblock	*p_next_memblock;
+	struct s_memblock	*p_first_chunk;
+	size_t				size;
 }						t_memblock;
 
-typedef struct			s_memzone
+typedef struct			s_mempage
 {
-	t_memblock			*memory_allocated;
-	t_memblock			*memory_empty;
-}						t_memzone;
+	struct s_mempage	*next_page;
+	t_memblock			*p_first_memblock;
+	size_t				available_memory;
+	size_t				total_memory;
+}						t_mempage;
 
-t_memzone				g_zones_array[N_ZONES];
-pthread_mutex_t			g_mutex = PTHREAD_MUTEX_INITIALIZER;
+t_mempage				*g_pages_array[N_PAGES];
+extern pthread_mutex_t	g_mutex;
 
 /**
  * -) deallocates the memory allocation pointed to by “ptr”.
@@ -62,7 +60,7 @@ void    *ft_realloc(void *ptr, size_t size);
  */
 void    *ft_malloc(size_t size);
 /**
- * allows visual on the state of the allocated memory zones.
+ * allows visual on the state of the allocated memory pages.
  *
  * Example:
  * TINY : 0xA0000
@@ -77,7 +75,7 @@ void    *ft_malloc(size_t size);
 void	show_alloc_mem();
 
 /**
- * displays more details, for example, a history of allocations, or an hexa dump of the allocated zones.
+ * displays more details, for example, a history of allocations, or an hexa dump of the allocated pages.
  */
 void	show_alloc_mem_ex();
 
@@ -85,7 +83,7 @@ void	show_alloc_mem_ex();
  * BONUS:
  *
  * -) Manage the malloc debug environment variables. You can imitate those from malloc system or invent your own.
- * -) Create a show_alloc_mem_ex() function that displays more details, for example, a history of allocations, or an hexa dump of the allocated zones.
+ * -) Create a show_alloc_mem_ex() function that displays more details, for example, a history of allocations, or an hexa dump of the allocated pages.
  * -) “Defragment” the freed memory.
  * -) Manage the use of your malloc in a multi-threaded program (so to be “thread safe” using the pthread lib).
  */
