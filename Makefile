@@ -4,7 +4,7 @@ endif
 
 # Compile variables
 CC              = gcc
-CFLAGS          = -Wall -Wextra -Werror -Wno-unused
+CFLAGS          = -Wall -Wextra -Werror -Wno-unused -Wno-unused-command-line-argument
 
 # Target variables
 LIB_MALLOC_LINK = libft_malloc.so
@@ -18,7 +18,7 @@ LIBFT_FLAGS		= -L./$(LIBFT)
 
 # Source files varibles
 SRC_PATH        = src
-SRC             = $(addprefix $(SRC_PATH)/, ft_free.c ft_malloc.c ft_realloc.c)
+SRC             = $(addprefix $(SRC_PATH)/, free.c malloc.c realloc.c)
 
 # Object files variables
 OBJECT_PATH		= obj

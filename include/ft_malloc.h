@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ft_malloc.h                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: rvolovik <rvolovik@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2019/04/27 07:36:28 by rvolovik          #+#    #+#             */
+/*   Updated: 2019/04/27 11:15:33 by rvolovik         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef FT_MALLOC_FT_MALLOC_H_
 # define FT_MALLOC_FT_MALLOC_H_
 
@@ -21,11 +33,12 @@
 # define TINY			256
 # define SMALL			4096
 # define N_PAGES		2
+# define TERMINATE_MEM	1
 
 typedef struct 			s_memblock
 {
 	struct s_memblock	*p_next_memblock;
-	struct s_memblock	*p_first_chunk;
+	void				*p_first_chunk;
 	size_t				size;
 }						t_memblock;
 
@@ -44,7 +57,7 @@ extern pthread_mutex_t	g_mutex;
  * -) deallocates the memory allocation pointed to by “ptr”.
  * +) If “ptr” is a NULL pointer, no operation is performed
  */
-void    ft_free(void *ptr);
+void    free(void *ptr);
 /**
  * -) tries to change the size of the allocation pointed to by “ptr” to “size”, and returns “ptr”.
  * -) If there is not enough room to enlarge the memory allocation pointed to by ptr, realloc() creates a new allocation,
@@ -52,13 +65,13 @@ void    ft_free(void *ptr);
  * 		and returns a pointer to the allocated memory
  * -) If there is an error, the malloc() et realloc() functions return a NULL pointer.
  */
-void    *ft_realloc(void *ptr, size_t size);
+void    *realloc(void *ptr, size_t size);
 
 /**
  * -) allocates “size” bytes of memory and returns a pointer to the allocated memory
  * -) If there is an error, the malloc() et realloc() functions return a NULL pointer.
  */
-void    *ft_malloc(size_t size);
+void    *malloc(size_t size);
 /**
  * allows visual on the state of the allocated memory pages.
  *
@@ -89,3 +102,6 @@ void	show_alloc_mem_ex();
  */
 
 #endif  // FT_MALLOC_FT_MALLOC_H_
+
+
+// gcc -o mytest mytest.c ../src/malloc.c -I../include/ -I../lib/libft/includes -L../lib/libft/ -lft && /usr/bin/time -l ./mytest
