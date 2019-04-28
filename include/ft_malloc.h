@@ -6,7 +6,7 @@
 /*   By: rvolovik <rvolovik@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/04/27 07:36:28 by rvolovik          #+#    #+#             */
-/*   Updated: 2019/04/27 11:15:33 by rvolovik         ###   ########.fr       */
+/*   Updated: 2019/04/28 15:27:32 by rvolovik         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,36 +27,27 @@
  */
 
 # define N_BLOCKS 		100
-# define I_TINY_PAGE	0
-# define I_SMALL_PAGE	1
-# define I_LARGE_PAGE	2
-# define TINY			256
-# define SMALL			4096
-# define N_PAGES		2
-# define TERMINATE_MEM	1
+# define TINY			(size_t)getpagesize()
+# define SMALL			(size_t)getpagesize() * 16
+# define BLOCK_SIZE(x)	((size_t)x + sizeof(t_block))
+# define G_SIZE			3
+# define I_TINY			0
+# define I_SMALL		1
+# define I_LARGE		2
 
-typedef struct 			s_memblock
+typedef struct 			s_block
 {
-	struct s_memblock	*p_next_memblock;
-	void				*p_first_chunk;
+	struct s_block		*next;
 	size_t				size;
-}						t_memblock;
+	int					free;
+	void				*memory;
+}						t_block;
 
-typedef struct			s_mempage
-{
-	struct s_mempage	*next_page;
-	t_memblock			*p_first_memblock;
-	size_t				available_memory;
-	size_t				total_memory;
-}						t_mempage;
-
-t_mempage				*g_pages_array[N_PAGES];
+t_block					*g_memory[G_SIZE];
 extern pthread_mutex_t	g_mutex;
 
-/**
- * -) deallocates the memory allocation pointed to by “ptr”.
- * +) If “ptr” is a NULL pointer, no operation is performed
- */
+int		find_allocated_block(t_block *block, int index, int make_free);
+
 void    free(void *ptr);
 /**
  * -) tries to change the size of the allocation pointed to by “ptr” to “size”, and returns “ptr”.
@@ -65,12 +56,7 @@ void    free(void *ptr);
  * 		and returns a pointer to the allocated memory
  * -) If there is an error, the malloc() et realloc() functions return a NULL pointer.
  */
-void    *realloc(void *ptr, size_t size);
-
-/**
- * -) allocates “size” bytes of memory and returns a pointer to the allocated memory
- * -) If there is an error, the malloc() et realloc() functions return a NULL pointer.
- */
+// void    *realloc(void *ptr, size_t size);
 void    *malloc(size_t size);
 /**
  * allows visual on the state of the allocated memory pages.
@@ -85,12 +71,13 @@ void    *malloc(size_t size);
  * 0xB0020 - 0xBBEEF : 48847 bytes
  * Total : 52698 bytes
  */
+void	ft_putaddr(unsigned long long ptr);
 void	show_alloc_mem();
 
 /**
  * displays more details, for example, a history of allocations, or an hexa dump of the allocated pages.
  */
-void	show_alloc_mem_ex();
+// void	show_alloc_mem_ex();
 
 /**
  * BONUS:

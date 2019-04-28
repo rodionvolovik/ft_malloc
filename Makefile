@@ -18,7 +18,7 @@ LIBFT_FLAGS		= -L./$(LIBFT)
 
 # Source files varibles
 SRC_PATH        = src
-SRC             = $(addprefix $(SRC_PATH)/, free.c malloc.c realloc.c)
+SRC             = $(addprefix $(SRC_PATH)/, free.c malloc.c realloc.c show_alloc_mem.c)
 
 # Object files variables
 OBJECT_PATH		= obj

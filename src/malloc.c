@@ -6,7 +6,7 @@
 /*   By: rvolovik <rvolovik@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/04/27 07:36:21 by rvolovik          #+#    #+#             */
-/*   Updated: 2019/04/27 11:13:26 by rvolovik         ###   ########.fr       */
+/*   Updated: 2019/04/28 15:34:18 by rvolovik         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,179 +19,156 @@
 
 pthread_mutex_t		g_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static size_t		get_block_size_type(size_t size)
+t_block				*get_last_block(t_block *head)
 {
-	if (size <= TINY)
+	t_block	*p_block;
+
+	if (!head)
+		return (NULL);
+	p_block = head;
+	while(p_block->next)
 	{
-		return (I_TINY_PAGE);
+		p_block = p_block->next;
 	}
-	else if (size <= SMALL)
-	{
-		return (I_SMALL_PAGE);
-	}
-	return (I_LARGE_PAGE);
+	return (p_block);
+	
 }
 
-static size_t		get_min_page_size(size_t size, size_t size_type)
+t_block				*mmap_request(size_t size)
 {
-	const unsigned int	const_alignment = 1;
-	size_t				allocation_size;
-	size_t				system_page_size;
+	t_block	*p_block;
 
-	allocation_size = 0;
-	system_page_size = getpagesize();
-	if (size_type != I_LARGE_PAGE)
-	{
-		allocation_size += (size_type == I_TINY_PAGE ? TINY : SMALL) * N_BLOCKS;
-	}
-	else
-	{
-		allocation_size += size + sizeof(t_mempage);
-	}
-	allocation_size = (const_alignment + allocation_size / system_page_size) *
-						system_page_size;
-	return (allocation_size);
-}
-
-t_memblock			*cut_new_memory_block(t_mempage *p_mempage_current,
-											size_t size)
-{
-	t_memblock	*p_new_memblock;
-	t_memblock	*p_memblock;
-	t_memblock	*p_memblock_lst;
-
-	if (p_mempage_current->p_first_memblock)
-	{
-		p_memblock = p_mempage_current->p_first_memblock;
-		while (p_memblock)
-		{
-			p_memblock_lst = p_memblock;
-			p_memblock = p_memblock->p_next_memblock;
-		}
-		p_memblock_lst->p_next_memblock = (t_memblock*)((char*)p_memblock_lst +
-									p_memblock_lst->size + sizeof(t_memblock));
-	}
-	else
-	{
-		p_new_memblock = (t_memblock*)((char*)p_mempage_current +
-						sizeof(t_mempage));
-		p_mempage_current->p_first_memblock = p_new_memblock;
-	}
-	p_new_memblock->size = size + TERMINATE_MEM - sizeof(t_memblock);
-	p_new_memblock->p_next_memblock = NULL;
-	p_new_memblock->p_first_chunk = (char*)p_new_memblock + sizeof(t_memblock);
-	p_mempage_current->available_memory -= size + TERMINATE_MEM;
-	return (p_new_memblock);
-	// p_last_memblock_on_page = NULL;
-	// p_memblock = p_mempage_current->p_first_memblock;
-	// while (p_memblock)
-	// {
-	// 	p_last_memblock_on_page = p_memblock;
-	// 	p_memblock = p_memblock->p_next_memblock;
-	// }
-	// if (p_last_memblock_on_page)
-	// {
-	// 	p_new_memblock = (t_memblock*)((char*)p_last_memblock_on_page +
-	// 					p_last_memblock_on_page->size + sizeof(t_memblock));
-	// 	p_last_memblock_on_page->p_next_memblock = p_new_memblock;
-	// }
-	// else
-	// {
-	// 	p_new_memblock = (t_memblock*)((char*)p_mempage_current +
-	// 					sizeof(t_mempage));
-	// 	p_mempage_current->p_first_memblock = p_new_memblock;
-	// }
-	// ft_bzero(p_new_memblock, size + TERMINATE_MEM);
-	// p_new_memblock->size = size - sizeof(t_memblock) + 1;
-	// p_new_memblock->p_next_memblock = NULL;
-	// p_new_memblock->p_first_chunk = (char*)p_new_memblock + sizeof(t_memblock);
-	// p_mempage_current->available_memory -= size;
-	// return (p_new_memblock);
-}
-
-static t_memblock	*check_available_block(size_t size, size_t size_type)
-{
-	t_mempage	*p_mempage;
-	t_memblock	*p_memblock;
-
-	if (g_pages_array[size_type] != NULL)
-	{
-		p_mempage = g_pages_array[size_type];
-		while (p_mempage)
-		{
-			if (p_mempage->available_memory >= size + sizeof(t_memblock))
-			{
-				return (cut_new_memory_block(p_mempage, size +
-													sizeof(t_memblock)));
-			}
-			p_mempage = p_mempage->next_page;
-		}
-	}
-	return ((t_memblock*)NULL);
-}
-
-static t_mempage	*allocate_new_page(size_t size)
-{
-	void		*p_new_page;
-	t_mempage	*p_new_mempage;
-
-	p_new_page = mmap(NULL, size, PROT_READ | PROT_WRITE | PROT_EXEC,
-				MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-	if (p_new_page == MAP_FAILED)
+	if ((p_block = mmap(0, size, PROT_READ | PROT_WRITE | PROT_EXEC,
+		MAP_ANONYMOUS | MAP_PRIVATE, -1, 0)) == MAP_FAILED)
 	{
 		return (NULL);
 	}
-	ft_bzero(p_new_page, size);
-	p_new_mempage = (t_mempage*)p_new_page;
-	p_new_mempage->available_memory = size - sizeof(t_mempage);
-	p_new_mempage->total_memory = size;
-	p_new_mempage->next_page = NULL;
-	p_new_mempage->p_first_memblock = NULL;
-	return ((t_mempage*)p_new_mempage);
+	return (p_block);
 }
 
-static int			add_memory_page(size_t size, size_t size_type)
+t_block				*mmap_block(t_block **block, size_t size)
 {
-	t_mempage	*p_last_mempage;
-	t_mempage	*p_mempage;
-	t_mempage	*p_new_mempage;
+	// ft_putstr("mmap_block START\n");
+	t_block	*p_block;
+	t_block *p_block_last;
 
-	p_new_mempage = allocate_new_page(get_min_page_size(size, size_type));
-	if (g_pages_array[size_type] == NULL)
+	p_block = *block;
+	if (p_block == NULL)
 	{
-		g_pages_array[size_type] = p_new_mempage;
+		p_block = mmap_request(size);
+		*block = p_block;
+		p_block->size = size;
+		// ft_putstr("mmap_block NEW\n");
+		return (p_block);
 	}
 	else
 	{
-		p_mempage = g_pages_array[size_type];
-		while (p_mempage)
-		{
-			p_last_mempage = p_mempage;
-			p_mempage = p_mempage->next_page;
-		}
-		p_last_mempage->next_page = p_new_mempage;
+		p_block_last = get_last_block(p_block);
+		p_block_last->next = mmap_request(size);
+		p_block_last->next->size = size;
+		// ft_putstr("mmap_block APPEND\n");
+		return (p_block_last->next);
 	}
-	return (p_new_mempage == NULL ? 0 : 1);
+	// ft_putstr("mmap_block END\n");
+	return (NULL);
+}
+
+t_block				*allocate_memory(size_t size)
+{
+	// ft_putstr("allocate_memory START\n");
+	t_block	*p_block;
+
+	if (size < TINY)
+		p_block = mmap_block(&g_memory[I_TINY], TINY * N_BLOCKS);
+	else if (size < SMALL)
+		p_block = mmap_block(&g_memory[I_SMALL], SMALL * N_BLOCKS);
+	else
+		p_block = mmap_block(&g_memory[I_LARGE], BLOCK_SIZE(size));
+	if (p_block->size - BLOCK_SIZE(size) == 0)
+		p_block->next = NULL;
+	else
+	{
+		p_block->next = (t_block*)((void*)p_block + BLOCK_SIZE(size));
+		p_block->next->size = p_block->size - BLOCK_SIZE(size) - sizeof(t_block);
+		p_block->next->memory = (void*)p_block->next + sizeof(t_block);
+		p_block->next->free = 1;
+		p_block->next->next = NULL;
+	}
+	p_block->memory = (void*)p_block + sizeof(t_block);
+	p_block->size = size;
+	ft_bzero(p_block->memory, p_block->size);
+	// ft_putstr("allocate_memory END\n");
+	return (p_block);
+}
+
+t_block				*cut_block(t_block **block, size_t size)
+{
+	t_block	*p_block;
+
+	p_block = *block;
+	p_block->free = 0;
+	p_block->next = (t_block*)((void*)p_block + BLOCK_SIZE(size));
+	p_block->next->size = p_block->size - BLOCK_SIZE(size);
+	p_block->next->memory = (void*)p_block->next + sizeof(t_block);
+	p_block->next->free = 1;
+	p_block->next->next = NULL;
+	p_block->size = size;
+
+	return p_block;
+}
+
+t_block				*find_free_block(t_block** head, size_t size)
+{
+	t_block	*p_block;
+
+	p_block = *head;
+	while(p_block)
+	{
+		if (p_block->free && p_block->size == size)
+		{
+			p_block->free = 0;
+			ft_bzero(p_block->memory, p_block->size);
+			return (p_block);
+		}
+		p_block = p_block->next;
+	}
+	p_block = *head;
+	while(p_block)
+	{
+		if (p_block->free && p_block->size > BLOCK_SIZE(size))
+		{
+			return cut_block(&p_block, size);
+		}
+		p_block = p_block->next;
+	}
+	return (NULL);
+}
+
+t_block				*find_memory(size_t size)
+{
+	t_block	*p_block;
+
+	if (size < TINY)
+		p_block = find_free_block(&g_memory[I_TINY], size);
+	else if (size < SMALL)
+		p_block = find_free_block(&g_memory[I_SMALL], size);
+	else
+		p_block = find_free_block(&g_memory[I_LARGE], size);
+	return p_block;
 }
 
 void				*malloc(size_t size)
 {
-	t_memblock			*p_memblock;
-	size_t				size_type;
+	t_block	*p_block;
 
 	if (size < 1)
-	{
-		return (void *)NULL;
-	}
-	size_type = get_block_size_type(size);
+		return ((void*)NULL);
+
 	pthread_mutex_lock(&g_mutex);
-	while (!(p_memblock = check_available_block(size, size_type)))
+	if (!(p_block = find_memory(size)))
 	{
-		if (!add_memory_page(size, size_type))
-		{
-			return (void*)NULL;
-		}
+		p_block = allocate_memory(size);
 	}
 	pthread_mutex_unlock(&g_mutex);
-	return ((void *)(p_memblock->p_first_chunk));
+	return ((void*)p_block->memory);
 }
